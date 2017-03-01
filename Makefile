@@ -3,13 +3,18 @@ SAXON = https://downloads.sourceforge.net/project/saxon/Saxon-HE/9.7/SaxonHE9-7-
 
 TXML = $(shell find w3c -type f -iname '*.txml')
 W3C_SCXML = $(TXML:.txml=.scxml)
+PB_SCXML = $(TXML:.txml=.pb)
 
 generate: w3c/.manifest saxon/saxon9he.jar
 	@$(MAKE) w3c.tar.gz
 
-w3c.tar.gz: $(W3C_SCXML)
-	@find w3c \( -name '*.scxml' -o -name '*.description' \) -print \
+w3c.tar.gz: $(W3C_SCXML) $(PB_SCXML)
+	@find w3c \( -name '*.scxml' -o -name '*.description' -o -name '*.pb' \) -print \
 	| tar -cf $@ --files-from -
+
+%.pb: %.scxml
+	@statechart-scxml $< > $@
+	@echo $@
 
 %.scxml: %.txml w3c/conf_ecmascript.xsl
 	@java -jar saxon/saxon9he.jar --suppressXsltNamespaceCheck:on -s:$< -xsl:w3c/conf_ecmascript.xsl -o:$@
